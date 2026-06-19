@@ -56,26 +56,3 @@ body,
 ::selection {
   background: var(--selection);
 }
-
-/* ---- Make the Milkdown editor follow our black & white palette ---- */
-.milkdown {
-  /* Unify heading + body typeface (frame theme defaults headings to serif). */
-  --crepe-font-title: var(--sans);
-  --crepe-font-default: var(--sans);
-  --crepe-font-code: var(--mono);
-
-  --crepe-color-background: transparent;
-  --crepe-color-on-background: var(--text);
-  --crepe-color-surface: var(--surface);
-  --crepe-color-surface-low: var(--surface);
-  --crepe-color-on-surface: var(--text);
-  --crepe-color-on-surface-variant: var(--muted);
-  --crepe-color-outline: var(--line);
-  --crepe-color-primary: var(--text);
-  --crepe-color-secondary: var(--hover);
-  --crepe-color-on-secondary: var(--text);
-  --crepe-color-hover: var(--hover);
-  --crepe-color-selected: var(--selection);
-  --crepe-color-inline-code: var(--muted);
-  --crepe-color-inline-area: var(--hover);
-}
