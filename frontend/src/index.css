@@ -10,8 +10,8 @@
   --muted: #666666;
   --line: #eaeaea;
   --accent: #000000;
-  /* Primary button (inverts text/bg) */
-  --btn-bg: #000000;
+  /* Primary button — soft charcoal rather than pure black */
+  --btn-bg: #333333;
   --btn-fg: #ffffff;
 
   --sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -37,8 +37,8 @@
     --muted: #888888;
     --line: #2a2a2a;
     --accent: #ffffff;
-    --btn-bg: #ffffff;
-    --btn-fg: #000000;
+    --btn-bg: #e5e5e5;
+    --btn-fg: #111111;
   }
 }
 

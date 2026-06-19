@@ -21,7 +21,8 @@
   border: 1px solid var(--line);
   border-radius: 8px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
-  padding: 40px 44px;
+  /* Roomy horizontal gutter so the left block handles stay inside the page. */
+  padding: 48px 76px;
   display: flex;
 }
 /* Editor fills the sheet so the whole page is a writing surface. */
@@ -34,6 +35,17 @@
 .sheet .milkdown .ProseMirror {
   min-height: 1000px;
   padding: 0;
+  /* Make the text caret clearly visible. */
+  caret-color: var(--text);
+}
+
+/* The per-line add / drag handles ship nearly invisible (theme uses the
+   faint outline color); give them a readable gray. */
+.sheet .milkdown .milkdown-block-handle .operation-item svg {
+  fill: var(--muted);
+}
+.sheet .milkdown .milkdown-block-handle .operation-item:hover svg {
+  fill: var(--text);
 }
 
 /* ---- Map the Milkdown editor onto our black & white palette ----
