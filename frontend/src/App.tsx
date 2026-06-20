@@ -88,52 +88,52 @@ function App() {
 
   return (
     <div className="app">
+      <button
+        type="button"
+        className="sheet-menu-btn"
+        aria-label="设置"
+        aria-haspopup="dialog"
+        onClick={() => setSettingsOpen(true)}
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <circle cx="5" cy="12" r="1.8" />
+          <circle cx="12" cy="12" r="1.8" />
+          <circle cx="19" cy="12" r="1.8" />
+        </svg>
+      </button>
+
+      <div className="publish" ref={publishRef}>
+        <button
+          type="button"
+          className="publish-btn"
+          disabled={busy !== null}
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((o) => !o)}
+        >
+          {busy ? '发布中…' : 'Publish'}
+        </button>
+        {menuOpen && (
+          <div className="publish-menu" role="menu">
+            {destinations.map((dest) => (
+              <button
+                key={dest.id}
+                type="button"
+                role="menuitem"
+                className="publish-item"
+                title={dest.hint}
+                onClick={() => pick(dest)}
+              >
+                <span className="publish-item-icon">{dest.icon}</span>
+                <span className="publish-item-name">{dest.name}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
       <main className="sheet-area">
         <div className="sheet">
-          <button
-            type="button"
-            className="sheet-menu-btn"
-            aria-label="设置"
-            aria-haspopup="dialog"
-            onClick={() => setSettingsOpen(true)}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <circle cx="5" cy="12" r="1.8" />
-              <circle cx="12" cy="12" r="1.8" />
-              <circle cx="19" cy="12" r="1.8" />
-            </svg>
-          </button>
-
-          <div className="publish" ref={publishRef}>
-            <button
-              type="button"
-              className="publish-btn"
-              disabled={busy !== null}
-              aria-haspopup="menu"
-              aria-expanded={menuOpen}
-              onClick={() => setMenuOpen((o) => !o)}
-            >
-              {busy ? '发布中…' : 'Publish'}
-            </button>
-            {menuOpen && (
-              <div className="publish-menu" role="menu">
-                {destinations.map((dest) => (
-                  <button
-                    key={dest.id}
-                    type="button"
-                    role="menuitem"
-                    className="publish-item"
-                    title={dest.hint}
-                    onClick={() => pick(dest)}
-                  >
-                    <span className="publish-item-icon">{dest.icon}</span>
-                    <span className="publish-item-name">{dest.name}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
           <Editor ref={editorRef} defaultValue={initialDraft} onChange={persist} />
         </div>
       </main>
