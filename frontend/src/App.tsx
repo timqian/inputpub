@@ -213,6 +213,7 @@ function ConfigDialog({
                 if (e.key === 'Enter' && canSave) save()
               }}
             />
+            {f.hint && <span className="field-hint">{f.hint}</span>}
           </label>
         ))}
         <div className="dialog-actions">
@@ -319,6 +320,7 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
                     setValues((v) => ({ ...v, [fieldId(d.id, f.key)]: e.target.value }))
                   }
                 />
+                {f.hint && <span className="field-hint">{f.hint}</span>}
               </label>
             ))}
           </div>

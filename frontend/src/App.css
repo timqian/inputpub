@@ -62,7 +62,7 @@
   z-index: 40;
   margin: 0 auto;
   max-width: calc(820px + 2rem); /* sheet max-width + .sheet-area's 2×1rem padding */
-  padding: 0 1rem;
+  padding: 0 1.4rem;
   box-sizing: border-box;
   display: flex;
   align-items: flex-start;
@@ -99,7 +99,7 @@
   position: relative;
 }
 .publish-btn {
-  padding: 0.3rem 1rem;
+  padding: 0.1rem 1rem;
   border: 1px solid var(--btn-bg);
   border-radius: 6px;
   background: var(--btn-bg);
@@ -231,6 +231,15 @@
 .field input:focus {
   outline: none;
   border-color: var(--accent);
+}
+.field-hint {
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--muted);
+}
+.field-hint a {
+  color: var(--text);
+  text-decoration: underline;
 }
 .dialog-actions {
   display: flex;

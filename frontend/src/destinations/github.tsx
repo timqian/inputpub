@@ -26,7 +26,25 @@ export const github: Destination = {
   name: 'GitHub',
   icon: GitHubMark,
   config: [
-    { key: 'token', label: 'GitHub Token', type: 'password', placeholder: 'ghp_… (需 repo 权限)' },
+    {
+      key: 'token',
+      label: 'GitHub Token',
+      type: 'password',
+      placeholder: 'github_pat_…',
+      hint: (
+        <>
+          建 fine-grained token，对目标仓库授予 <b>Contents: Read and write</b> 权限。{' '}
+          <a
+            href="https://github.com/settings/personal-access-tokens/new"
+            target="_blank"
+            rel="noreferrer"
+            onClick={(e) => e.stopPropagation()}
+          >
+            去创建 ↗
+          </a>
+        </>
+      ),
+    },
     { key: 'repo', label: '仓库 (owner/repo)', placeholder: 'timqian/notes' },
     { key: 'dir', label: '目录（可选）', placeholder: 'posts', optional: true },
   ],

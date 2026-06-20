@@ -7,6 +7,8 @@ export interface ConfigField {
   type?: 'text' | 'password'
   /** Optional fields don't block a destination from being "configured". */
   optional?: boolean
+  /** Small helper text shown under the input (may contain a link). */
+  hint?: ReactNode
 }
 
 export interface DestinationContext {
