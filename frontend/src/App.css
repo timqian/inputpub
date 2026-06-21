@@ -48,19 +48,18 @@
    tables) live in components/editor-theme.css. */
 
 @media (max-width: 700px) {
-  /* Keep a top gap (backdrop) so the fixed Publish button sits above the
-     sheet, not over its content. Sheet stays full-bleed left/right. */
+  /* Keep a top gap (for the Publish button) plus a little backdrop margin
+     around the sheet, so it still reads as a floating page (not full-bleed). */
   .sheet-area {
-    padding: 4rem 0 0;
-    width: 100%;
+    padding: 4rem 0.75rem 0.75rem;
   }
   .sheet {
-    min-height: calc(100dvh - 4rem);
-    border: none;
-    border-top: 1px solid var(--line);
-    border-radius: 0;
-    box-shadow: none;
-    padding: 1.75rem 1.1rem 2rem;
+    min-height: calc(100dvh - 4.75rem); /* viewport − top gap − bottom margin */
+    padding: 1.75rem 1.25rem 2rem;
+  }
+  /* Keep Publish aligned with the sheet's (now inset) right edge. */
+  .topbar {
+    padding: 0 0.8rem;
   }
 }
 
@@ -74,7 +73,7 @@
   z-index: 40;
   margin: 0 auto;
   max-width: calc(820px + 2rem); /* sheet max-width + .sheet-area's 2×1rem padding */
-  padding: 0 1.4rem;
+  padding: 0 1rem;
   box-sizing: border-box;
   display: flex;
   align-items: flex-start;

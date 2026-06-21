@@ -3,11 +3,27 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- Match the iOS status-bar / dynamic-island area to the page backdrop -->
     <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+    <!-- Add to Home Screen (iOS + Android) -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="input.pub" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>input.pub</title>
+    <meta
+      name="description"
+      content="input here, publish anywhere — a minimalist Markdown editor that publishes to X, GitHub, Email, ChatGPT and more."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="input.pub" />
+    <meta property="og:description" content="input here, publish anywhere" />
+    <meta property="og:image" content="/icon-512.png" />
+    <meta name="twitter:card" content="summary" />
   </head>
   <body>
     <div id="root"></div>
