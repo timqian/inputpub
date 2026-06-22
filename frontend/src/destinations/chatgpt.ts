@@ -7,7 +7,7 @@ export const chatgpt: Destination = {
   name: 'ChatGPT',
   icon: ChatGPTIcon,
   send(markdown) {
-    const url = `https://chatgpt.com/?q=${encodeURIComponent(markdown)}`
+    const url = `https://chatgpt.com/?q=${encodeURIComponent(markdown.trim())}`
     window.open(url, '_blank', 'noopener,noreferrer')
     return 'Opened in ChatGPT'
   },

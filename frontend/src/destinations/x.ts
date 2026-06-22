@@ -11,7 +11,7 @@ export const x: Destination = {
   hint: '280-character limit — trim if longer',
   send(markdown) {
     const text = markdownToText(markdown)
-    const url = `https://x.com/intent/tweet?text=${encodeURIComponent(text)}`
+    const url = `https://x.com/intent/post?text=${encodeURIComponent(text)}`
     window.open(url, '_blank', 'noopener,noreferrer')
     return 'Opened the X compose window'
   },
