@@ -37,7 +37,7 @@ export function Editor({ defaultValue, onChange, ref }: EditorProps) {
       root: rootRef.current,
       defaultValue,
       featureConfigs: {
-        [Crepe.Feature.Placeholder]: { text: 'input here, publish anywhere…' },
+        [Crepe.Feature.Placeholder]: { text: 'Input here. Hit Publish to send anywhere.' },
       },
     })
     crepe.on((api) => {
