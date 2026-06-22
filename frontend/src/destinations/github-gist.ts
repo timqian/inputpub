@@ -14,10 +14,10 @@ export const githubGist: Destination = {
     {
       key: 'token',
       label: 'GitHub Token',
-      placeholder: 'ghp_…',
+      placeholder: 'github_pat_…',
       type: 'password',
       shared: 'github-token', // same token as the GitHub destination
-      hint: '与 GitHub 共用一个 token（classic，需 gist 权限）。',
+      hint: '与 GitHub 共用一个 fine-grained token（Account 权限里需 Gists 读写）。',
     },
   ],
   async send(markdown, ctx) {
