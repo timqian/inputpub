@@ -25,12 +25,13 @@ export const github: Destination = {
       key: 'token',
       label: 'GitHub Token',
       type: 'password',
-      placeholder: 'github_pat_…',
+      placeholder: 'ghp_…',
+      shared: 'github-token', // one token for both GitHub + Gist
       hint: (
         <>
-          建 fine-grained token，对目标仓库授予 <b>Contents: Read and write</b> 权限。{' '}
+          用一个 classic token，勾选 <b>repo</b> + <b>gist</b>（同时用于发布到仓库和 Gist）。{' '}
           <a
-            href="https://github.com/settings/personal-access-tokens/new"
+            href="https://github.com/settings/tokens/new?scopes=repo,gist&description=Input%20Pub"
             target="_blank"
             rel="noreferrer"
             onClick={(e) => e.stopPropagation()}

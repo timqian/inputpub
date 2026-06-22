@@ -13,9 +13,11 @@ export const githubGist: Destination = {
   config: [
     {
       key: 'token',
-      label: 'GitHub Personal Access Token',
-      placeholder: 'ghp_… (需 gist 权限)',
+      label: 'GitHub Token',
+      placeholder: 'ghp_…',
       type: 'password',
+      shared: 'github-token', // same token as the GitHub destination
+      hint: '与 GitHub 共用一个 token（classic，需 gist 权限）。',
     },
   ],
   async send(markdown, ctx) {

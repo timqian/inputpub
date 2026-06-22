@@ -179,6 +179,45 @@
   height: 1em;
   vertical-align: -0.15em;
 }
+.toggle-list {
+  display: flex;
+  flex-direction: column;
+}
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.4rem 0;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.toggle-row + .toggle-row {
+  border-top: 1px solid var(--line);
+}
+.toggle-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+.toggle-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.2rem;
+  font-size: 1.05rem;
+}
+.toggle-icon svg {
+  width: 1em;
+  height: 1em;
+  display: block;
+}
+.toggle-row input[type='checkbox'] {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--btn-bg);
+  cursor: pointer;
+}
 
 /* ---- Toast ---- */
 .toast {

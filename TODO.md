@@ -1,6 +1,4 @@
-- setting 下面加 GitHub 按钮
-- setting 里面可以配置打开哪些 destination
-- github/gist token 可以用同一个
-- 发不到 v2EX
-- 项目加 sponsor 信息。
+- [x] github/gist token 可以用同一个
+- [x] setting 里面可以配置打开哪些 destination
+- [x] 增加发布到 v2EX，并且默认是不打开的
 - 关于图片

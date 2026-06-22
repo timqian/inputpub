@@ -9,6 +9,9 @@ export interface ConfigField {
   optional?: boolean
   /** Small helper text shown under the input (may contain a link). */
   hint?: ReactNode
+  /** If set, the value is stored under a global key shared across destinations
+   *  (e.g. one GitHub token for both the repo and gist targets). */
+  shared?: string
 }
 
 export interface DestinationContext {
@@ -31,6 +34,8 @@ export interface Destination {
   config?: ConfigField[]
   /** If present, these values are collected at publish time and passed via ctx.input. */
   prompt?: ConfigField[]
+  /** Whether the destination is shown in the menu by default (default: true). */
+  defaultEnabled?: boolean
   /**
    * Perform the publish/send for the given markdown.
    * Throw to signal failure — the UI surfaces the message.

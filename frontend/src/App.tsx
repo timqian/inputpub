@@ -1,17 +1,36 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Editor, type EditorHandle } from './components/Editor'
 import { destinations, type Destination } from './destinations'
+import type { ConfigField } from './destinations/types'
 import { GearIcon } from './destinations/icons'
 import {
   debounce,
   getConfig,
+  getEnabled,
   loadDraft,
   saveDraft,
   setConfig,
+  setEnabled,
 } from './lib/storage'
 import './App.css'
 
 type Status = { kind: 'ok' | 'error'; text: string } | null
+
+/** Where a config field is stored: a shared global key, or the destination's
+ *  own namespace. Lets GitHub + Gist share one token. */
+function fieldLoc(dest: Destination, field: ConfigField): [string, string] {
+  return field.shared ? ['shared', field.shared] : [dest.id, field.key]
+}
+function findField(dest: Destination, key: string): ConfigField | undefined {
+  return (
+    (dest.config ?? []).find((f) => f.key === key) ??
+    (dest.prompt ?? []).find((f) => f.key === key)
+  )
+}
+function readField(dest: Destination, field: ConfigField): string {
+  const [d, k] = fieldLoc(dest, field)
+  return getConfig(d, k) ?? ''
+}
 
 function App() {
   const editorRef = useRef<EditorHandle>(null)
@@ -24,7 +43,17 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [configFor, setConfigFor] = useState<Destination | null>(null)
   const [promptFor, setPromptFor] = useState<Destination | null>(null)
+  const [enabledMap, setEnabledMap] = useState<Record<string, boolean>>(() => {
+    const m: Record<string, boolean> = {}
+    for (const d of destinations) m[d.id] = getEnabled(d.id) ?? d.defaultEnabled ?? true
+    return m
+  })
   const publishRef = useRef<HTMLDivElement>(null)
+
+  function toggleEnabled(id: string, on: boolean) {
+    setEnabled(id, on)
+    setEnabledMap((m) => ({ ...m, [id]: on }))
+  }
 
   // Close the publish menu on outside click / Escape.
   useEffect(() => {
@@ -49,13 +78,21 @@ function App() {
   }, [status])
 
   const ctxFor = (dest: Destination, input: Record<string, string>) => ({
-    getConfig: (key: string) => getConfig(dest.id, key),
-    setConfig: (key: string, value: string) => setConfig(dest.id, key, value),
+    getConfig: (key: string) => {
+      const f = findField(dest, key)
+      const [d, k] = f ? fieldLoc(dest, f) : [dest.id, key]
+      return getConfig(d, k)
+    },
+    setConfig: (key: string, value: string) => {
+      const f = findField(dest, key)
+      const [d, k] = f ? fieldLoc(dest, f) : [dest.id, key]
+      setConfig(d, k, value)
+    },
     input,
   })
 
   const isConfigured = (dest: Destination) =>
-    !dest.config || dest.config.every((f) => f.optional || !!getConfig(dest.id, f.key))
+    !dest.config || dest.config.every((f) => f.optional || !!readField(dest, f))
 
   async function run(dest: Destination, input: Record<string, string> = {}) {
     const markdown = editorRef.current?.getMarkdown() ?? ''
@@ -117,7 +154,9 @@ function App() {
           </button>
           {menuOpen && (
             <div className="publish-menu" role="menu">
-              {destinations.map((dest) => (
+              {destinations
+                .filter((dest) => enabledMap[dest.id])
+                .map((dest) => (
                 <button
                   key={dest.id}
                   type="button"
@@ -182,7 +221,13 @@ function App() {
         />
       )}
 
-      {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
+      {settingsOpen && (
+        <SettingsDialog
+          enabled={enabledMap}
+          onToggle={toggleEnabled}
+          onClose={() => setSettingsOpen(false)}
+        />
+      )}
     </div>
   )
 }
@@ -197,13 +242,16 @@ function ConfigDialog({
   onSaved: (dest: Destination) => void
 }) {
   const [values, setValues] = useState<Record<string, string>>(() =>
-    Object.fromEntries((dest.config ?? []).map((f) => [f.key, getConfig(dest.id, f.key) ?? ''])),
+    Object.fromEntries((dest.config ?? []).map((f) => [f.key, readField(dest, f)])),
   )
 
-  const canSave = (dest.config ?? []).every((f) => values[f.key]?.trim())
+  const canSave = (dest.config ?? []).every((f) => f.optional || values[f.key]?.trim())
 
   function save() {
-    for (const f of dest.config ?? []) setConfig(dest.id, f.key, values[f.key].trim())
+    for (const f of dest.config ?? []) {
+      const [d, k] = fieldLoc(dest, f)
+      setConfig(d, k, values[f.key].trim())
+    }
     onSaved(dest)
   }
 
@@ -292,23 +340,46 @@ function PromptDialog({
   )
 }
 
-function SettingsDialog({ onClose }: { onClose: () => void }) {
-  // Destinations that need credentials (currently GitHub Gist's token).
-  const configurable = destinations.filter((d) => d.config?.length)
-  const fieldId = (destId: string, key: string) => `${destId}.${key}`
+function SettingsDialog({
+  enabled,
+  onToggle,
+  onClose,
+}: {
+  enabled: Record<string, boolean>
+  onToggle: (id: string, on: boolean) => void
+  onClose: () => void
+}) {
+  // Credential groups, deduping fields that are shared across destinations
+  // (e.g. the GitHub token shown once, under the GitHub group).
+  const seen = new Set<string>()
+  const groups = destinations
+    .filter((d) => d.config?.length)
+    .map((d) => ({
+      d,
+      fields: (d.config ?? []).filter((f) => {
+        if (f.shared) {
+          if (seen.has(f.shared)) return false
+          seen.add(f.shared)
+        }
+        return true
+      }),
+    }))
+    .filter((g) => g.fields.length)
 
+  const locKey = (d: Destination, f: ConfigField) => fieldLoc(d, f).join('.')
   const [values, setValues] = useState<Record<string, string>>(() => {
     const v: Record<string, string> = {}
-    for (const d of configurable)
-      for (const f of d.config ?? []) v[fieldId(d.id, f.key)] = getConfig(d.id, f.key) ?? ''
+    for (const { d, fields } of groups) for (const f of fields) v[locKey(d, f)] = readField(d, f)
     return v
   })
   const [saved, setSaved] = useState(false)
 
   function save() {
-    for (const d of configurable)
-      for (const f of d.config ?? [])
-        setConfig(d.id, f.key, (values[fieldId(d.id, f.key)] ?? '').trim())
+    for (const { d, fields } of groups)
+      for (const f of fields) {
+        const [sd, sk] = fieldLoc(d, f)
+        setConfig(sd, sk, (values[locKey(d, f)] ?? '').trim())
+      }
     setSaved(true)
     setTimeout(() => setSaved(false), 1500)
   }
@@ -318,27 +389,44 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
       <div className="dialog" onClick={(e) => e.stopPropagation()}>
         <h2>设置</h2>
         <p className="dialog-note">所有配置仅保存在本浏览器（localStorage），不会上传。</p>
-        {configurable.map((d) => (
+
+        <div className="settings-group-title">显示的发布目标</div>
+        <div className="toggle-list">
+          {destinations.map((d) => (
+            <label key={d.id} className="toggle-row">
+              <span className="toggle-label">
+                <span className="toggle-icon">{d.icon}</span>
+                {d.name}
+              </span>
+              <input
+                type="checkbox"
+                checked={!!enabled[d.id]}
+                onChange={(e) => onToggle(d.id, e.target.checked)}
+              />
+            </label>
+          ))}
+        </div>
+
+        {groups.map(({ d, fields }) => (
           <div key={d.id}>
             <div className="settings-group-title">
               {d.icon} {d.name}
             </div>
-            {(d.config ?? []).map((f) => (
+            {fields.map((f) => (
               <label key={f.key} className="field">
                 <span>{f.label}</span>
                 <input
                   type={f.type ?? 'text'}
                   placeholder={f.placeholder}
-                  value={values[fieldId(d.id, f.key)]}
-                  onChange={(e) =>
-                    setValues((v) => ({ ...v, [fieldId(d.id, f.key)]: e.target.value }))
-                  }
+                  value={values[locKey(d, f)]}
+                  onChange={(e) => setValues((v) => ({ ...v, [locKey(d, f)]: e.target.value }))}
                 />
                 {f.hint && <span className="field-hint">{f.hint}</span>}
               </label>
             ))}
           </div>
         ))}
+
         <div className="dialog-actions">
           <button type="button" className="ghost" onClick={onClose}>
             关闭
