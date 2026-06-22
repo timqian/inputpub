@@ -1,20 +1,25 @@
 .app {
   min-height: 100vh;
   min-height: 100dvh;
+  /* Single source of truth for the sheet width + horizontal page gutter.
+     Both the sheet and the fixed top bar derive their edges from these, so
+     Publish always lines up with the sheet's right edge at any width. */
+  --sheet-max: 820px;
+  --page-pad: 1rem;
 }
 
 /* ---- A4 sheet ---- */
 .sheet-area {
   min-height: 100vh;
   min-height: 100dvh;
-  padding: 4rem 1rem 1rem; /* extra 10px above the sheet */
+  padding: 4rem var(--page-pad) 1rem;
   display: flex;
   justify-content: center;
   background: var(--backdrop);
 }
 .sheet {
   width: 100%;
-  max-width: 820px; /* a touch wider than A4 for a roomier writing column */
+  max-width: var(--sheet-max); /* a touch wider than A4 for a roomier writing column */
   /* Fill the viewport (minus .sheet-area's 4rem top + 1rem bottom) so an
      empty page fits on one screen without a scrollbar, then grows with content. */
   min-height: calc(100dvh - 5rem);
@@ -48,18 +53,17 @@
    tables) live in components/editor-theme.css. */
 
 @media (max-width: 700px) {
-  /* Keep a top gap (for the Publish button) plus a little backdrop margin
-     around the sheet, so it still reads as a floating page (not full-bleed). */
+  /* A little backdrop margin around the sheet (not full-bleed). Shrinking the
+     shared gutter keeps the top bar + sheet aligned automatically. */
+  .app {
+    --page-pad: 0.75rem;
+  }
   .sheet-area {
-    padding: 4rem 0.75rem 0.75rem;
+    padding-bottom: 0.75rem;
   }
   .sheet {
     min-height: calc(100dvh - 4.75rem); /* viewport − top gap − bottom margin */
     padding: 1.75rem 1.25rem 2rem;
-  }
-  /* Keep Publish aligned with the sheet's (now inset) right edge. */
-  .topbar {
-    padding: 0 0.8rem;
   }
 }
 
@@ -72,8 +76,9 @@
   right: 0;
   z-index: 40;
   margin: 0 auto;
-  max-width: calc(820px + 2rem); /* sheet max-width + .sheet-area's 2×1rem padding */
-  padding: 0 1rem;
+  /* Same box as the sheet: sheet width + the gutter on each side. */
+  max-width: calc(var(--sheet-max) + 2 * var(--page-pad));
+  padding: 0 var(--page-pad);
   box-sizing: border-box;
   display: flex;
   align-items: flex-start;
@@ -92,7 +97,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.1rem 0.7rem 0.1rem 1rem;
+  padding: 0.1rem 0.4rem 0.1rem 0.7rem;
   border: 1px solid var(--btn-bg);
   border-radius: 6px;
   background: var(--btn-bg);
