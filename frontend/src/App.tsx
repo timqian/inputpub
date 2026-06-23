@@ -218,7 +218,7 @@ function App() {
                 }}
               >
                 <span className="publish-item-icon">{GearIcon}</span>
-                <span className="publish-item-name">Settings</span>
+                <span className="publish-item-name">Customize</span>
               </button>
             </div>
           )}
@@ -447,7 +447,7 @@ function SettingsDialog({
   return (
     <div className="overlay" onClick={onClose}>
       <div className="dialog" onClick={(e) => e.stopPropagation()}>
-        <h2>Settings</h2>
+        <h2>Customize</h2>
         <p className="dialog-note">
           Toggle each destination on or off; expand the ones with a chevron to configure them. Saved
           only in this browser (localStorage); never uploaded.
