@@ -220,13 +220,10 @@ function App() {
             ref={editorRef}
             defaultValue={initialDraft}
             onChange={persist}
-            onImageUploadAttempt={() =>
-              setStatus({
-                kind: 'ok',
-                big: true,
-                text: 'Image upload is a paid feature, still in the works. For now, paste an image URL instead.',
-              })
-            }
+            onImageUploadAttempt={() => {
+              // Image upload is a Pro feature — send them to the Pro page.
+              window.location.href = '/pro'
+            }}
           />
         </div>
       </main>

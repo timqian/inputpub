@@ -21,15 +21,15 @@ function Pro() {
 
         <ul className="pro-features">
           <li>
-            <span className="pro-feature-name">Cloud drafts</span>
-            <span className="pro-feature-desc">
-              Your drafts sync to the cloud — pick up where you left off on any device.
-            </span>
-          </li>
-          <li>
             <span className="pro-feature-name">Image uploads</span>
             <span className="pro-feature-desc">
               Drop images straight into a note; we host them and insert the link for you.
+            </span>
+          </li>
+          <li>
+            <span className="pro-feature-name">Cloud drafts</span>
+            <span className="pro-feature-desc">
+              Store drafts in the cloud — pick up where you left off on any device.
             </span>
           </li>
         </ul>

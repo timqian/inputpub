@@ -40,14 +40,27 @@ export function Editor({ defaultValue, onChange, onImageUploadAttempt, ref }: Ed
   useEffect(() => {
     if (!rootRef.current) return
 
-    // Local image upload is intentionally disabled: there's no backend to host
-    // the file. Intercept every upload path (button, drag, paste) to show a
-    // notice, and steer the user to paste an image URL instead — which already
-    // works via the image block's URL field.
+    // Local image upload is a Pro feature. Intercept every upload path so the
+    // user is sent to the Pro page instead. Pasting an image URL still works
+    // via the image block's URL field.
     const blockUpload = async (): Promise<string> => {
       onUploadAttemptRef.current?.()
       return ''
     }
+
+    // The "Upload file" control is a <label class="uploader"> that opens the OS
+    // file picker. Catch the click in the capture phase so we redirect *before*
+    // the picker opens, instead of after a file is chosen.
+    const root = rootRef.current
+    const onUploaderClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null
+      if (target?.closest('.uploader')) {
+        e.preventDefault()
+        e.stopPropagation()
+        onUploadAttemptRef.current?.()
+      }
+    }
+    root.addEventListener('click', onUploaderClick, true)
 
     const crepe = new Crepe({
       root: rootRef.current,
@@ -78,6 +91,7 @@ export function Editor({ defaultValue, onChange, onImageUploadAttempt, ref }: Ed
 
     return () => {
       destroyed = true
+      root.removeEventListener('click', onUploaderClick, true)
       crepeRef.current = null
       crepe.destroy()
     }
