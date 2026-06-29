@@ -6,33 +6,6 @@
    black & white palette (the --bg/--text/... vars from index.css).
 --------------------------------------------------------------------------- */
 
-.milkdown {
-  /* Typography — unify heading + body (frame theme defaults headings to serif). */
-  --crepe-font-title: var(--sans);
-  --crepe-font-default: var(--sans);
-  --crepe-font-code: var(--mono);
-
-  /* Colors mapped onto our palette. */
-  --crepe-color-background: transparent;
-  --crepe-color-on-background: var(--text);
-  --crepe-color-surface: var(--surface);
-  --crepe-color-surface-low: var(--surface);
-  --crepe-color-on-surface: var(--text);
-  --crepe-color-on-surface-variant: var(--muted);
-  /* Crepe overloads `outline` for BOTH faint borders/dividers AND foreground
-     icons (block handles, slash-menu, toolbar, list markers, links, hr…).
-     Mapping it to a mid-gray makes all those icons visible at once; the
-     borders/dividers stay subtle because Crepe applies them at ~20% opacity. */
-  --crepe-color-outline: var(--muted);
-  --crepe-color-primary: var(--text);
-  --crepe-color-secondary: var(--hover);
-  --crepe-color-on-secondary: var(--text);
-  --crepe-color-hover: var(--hover);
-  --crepe-color-selected: var(--selection);
-  --crepe-color-inline-code: var(--muted);
-  --crepe-color-inline-area: var(--hover);
-}
-
 /* Headings share the body typeface (only size/weight differ). */
 .milkdown .ProseMirror :is(h1, h2, h3, h4, h5, h6) {
   font-family: var(--sans);
@@ -60,4 +33,18 @@
 .milkdown .milkdown-table-block th,
 .milkdown .milkdown-table-block td {
   border: 1px solid color-mix(in srgb, var(--text), transparent 80%);
+}
+
+/* Fill the editor wrapper (and thus the sheet) so the whole page is a writing
+   surface. The wrapper itself is laid out with Tailwind in Editor.tsx; these
+   target the .milkdown / .ProseMirror nodes Crepe injects at runtime. */
+.milkdown {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+}
+.milkdown .ProseMirror {
+  flex: 1;
+  padding: 0;
 }

@@ -1,3 +1,27 @@
+@import 'tailwindcss';
+
+/* Expose the existing palette (the --bg/--paper/… vars below, which flip in the
+   dark-mode media query) as Tailwind color tokens, so `bg-paper`, `text-muted`,
+   etc. work and dark mode keeps flowing through the same variables.
+   `inline` makes the utilities reference the source vars directly. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-backdrop: var(--backdrop);
+  --color-paper: var(--paper);
+  --color-hover: var(--hover);
+  --color-selection: var(--selection);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-btn-bg: var(--btn-bg);
+  --color-btn-fg: var(--btn-fg);
+
+  --font-sans: var(--sans);
+  --font-mono: var(--mono);
+}
+
 :root {
   /* Vercel-style black & white palette (light) */
   --bg: #ffffff;

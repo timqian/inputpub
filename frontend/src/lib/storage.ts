@@ -1,6 +1,7 @@
 const DRAFT_KEY = 'inputpub.draft'
 const configKey = (destId: string, field: string) => `inputpub.config.${destId}.${field}`
 const enabledKey = (destId: string) => `inputpub.enabled.${destId}`
+const IMAGE_HOST_DEFAULT_KEY = 'inputpub.imagehost.default'
 
 export function loadDraft(): string {
   try {
@@ -47,6 +48,23 @@ export function getEnabled(destId: string): boolean | undefined {
 export function setEnabled(destId: string, on: boolean): void {
   try {
     localStorage.setItem(enabledKey(destId), on ? '1' : '0')
+  } catch {
+    /* storage unavailable — ignore */
+  }
+}
+
+/** The id of the image host chosen as default for uploads (unset = none). */
+export function getImageHostDefault(): string | undefined {
+  try {
+    return localStorage.getItem(IMAGE_HOST_DEFAULT_KEY) ?? undefined
+  } catch {
+    return undefined
+  }
+}
+
+export function setImageHostDefault(id: string): void {
+  try {
+    localStorage.setItem(IMAGE_HOST_DEFAULT_KEY, id)
   } catch {
     /* storage unavailable — ignore */
   }

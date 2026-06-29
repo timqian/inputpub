@@ -3,6 +3,7 @@ import { Crepe } from '@milkdown/crepe'
 import '@milkdown/crepe/theme/common/style.css'
 import '@milkdown/crepe/theme/frame.css'
 import './editor-theme.css' // our overrides — must load after the theme
+import { isImageHostConfigured, uploadImage } from '../lib/imageHost'
 
 export interface EditorHandle {
   getMarkdown: () => string
@@ -13,13 +14,21 @@ interface EditorProps {
   defaultValue: string
   /** Called (debounced by Milkdown) whenever the markdown changes. */
   onChange?: (markdown: string) => void
-  /** Called when the user tries to upload a local image file (upload is
-   *  intentionally disabled — they should paste an image URL instead). */
-  onImageUploadAttempt?: () => void
+  /** Called when an image upload is attempted but no image host is configured,
+   *  so the app can offer to configure one (or go Pro). */
+  onImageUploadUnconfigured?: () => void
+  /** Called when an image upload fails, so the app can surface the error. */
+  onImageUploadError?: (message: string) => void
   ref?: Ref<EditorHandle>
 }
 
-export function Editor({ defaultValue, onChange, onImageUploadAttempt, ref }: EditorProps) {
+export function Editor({
+  defaultValue,
+  onChange,
+  onImageUploadUnconfigured,
+  onImageUploadError,
+  ref,
+}: EditorProps) {
   const rootRef = useRef<HTMLDivElement>(null)
   const crepeRef = useRef<Crepe | null>(null)
 
@@ -28,10 +37,14 @@ export function Editor({ defaultValue, onChange, onImageUploadAttempt, ref }: Ed
   useEffect(() => {
     onChangeRef.current = onChange
   }, [onChange])
-  const onUploadAttemptRef = useRef(onImageUploadAttempt)
+  const onUnconfiguredRef = useRef(onImageUploadUnconfigured)
   useEffect(() => {
-    onUploadAttemptRef.current = onImageUploadAttempt
-  }, [onImageUploadAttempt])
+    onUnconfiguredRef.current = onImageUploadUnconfigured
+  }, [onImageUploadUnconfigured])
+  const onUploadErrorRef = useRef(onImageUploadError)
+  useEffect(() => {
+    onUploadErrorRef.current = onImageUploadError
+  }, [onImageUploadError])
 
   useImperativeHandle(ref, () => ({
     getMarkdown: () => crepeRef.current?.getMarkdown() ?? '',
@@ -40,24 +53,34 @@ export function Editor({ defaultValue, onChange, onImageUploadAttempt, ref }: Ed
   useEffect(() => {
     if (!rootRef.current) return
 
-    // Local image upload is a Pro feature. Intercept every upload path so the
-    // user is sent to the Pro page instead. Pasting an image URL still works
-    // via the image block's URL field.
-    const blockUpload = async (): Promise<string> => {
-      onUploadAttemptRef.current?.()
-      return ''
+    // Upload picked/pasted images to the configured image host and return the
+    // raw URL for the editor to embed. With no host configured, prompt the user
+    // (configure one, or go Pro) and insert nothing.
+    const blockUpload = async (file: File): Promise<string> => {
+      if (!isImageHostConfigured()) {
+        onUnconfiguredRef.current?.()
+        return ''
+      }
+      try {
+        return await uploadImage(file)
+      } catch (err) {
+        onUploadErrorRef.current?.(err instanceof Error ? err.message : String(err))
+        return ''
+      }
     }
 
     // The "Upload file" control is a <label class="uploader"> that opens the OS
-    // file picker. Catch the click in the capture phase so we redirect *before*
-    // the picker opens, instead of after a file is chosen.
+    // file picker. When there's no host yet, catch the click in the capture
+    // phase so we prompt *before* the picker opens instead of after a file is
+    // chosen. When a host is configured, let the picker open and the chosen
+    // file flow into blockUpload above.
     const root = rootRef.current
     const onUploaderClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement | null
-      if (target?.closest('.uploader')) {
+      if (target?.closest('.uploader') && !isImageHostConfigured()) {
         e.preventDefault()
         e.stopPropagation()
-        onUploadAttemptRef.current?.()
+        onUnconfiguredRef.current?.()
       }
     }
     root.addEventListener('click', onUploaderClick, true)
@@ -67,7 +90,7 @@ export function Editor({ defaultValue, onChange, onImageUploadAttempt, ref }: Ed
       defaultValue,
       featureConfigs: {
         [Crepe.Feature.Placeholder]: {
-          text: 'Input here. Hit Publish to send anywhere.',
+          text: 'Input here, publish anywhere.',
           mode: 'doc', // only when the whole doc is empty, not on every blank line
         },
         [Crepe.Feature.ImageBlock]: {
@@ -99,5 +122,8 @@ export function Editor({ defaultValue, onChange, onImageUploadAttempt, ref }: Ed
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  return <div className="editor" ref={rootRef} />
+  // Fill the sheet so the whole page is a writing surface (the inner .milkdown
+  // / .ProseMirror fill rules live in editor-theme.css, since Crepe injects
+  // that DOM itself).
+  return <div className="flex min-w-0 flex-1 flex-col" ref={rootRef} />
 }

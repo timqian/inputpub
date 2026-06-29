@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Editor, type EditorHandle } from './components/Editor'
 import { destinations, type Destination } from './destinations'
-import type { ConfigField } from './destinations/types'
-import { GearIcon } from './destinations/icons'
+import { GearIcon, MoreIcon, LoadIcon, ImageIcon, FeedbackIcon } from './destinations/icons'
 import { renderTemplate, templateVars } from './lib/template'
+import { fieldLoc, findField, readField } from './lib/fields'
+import { useDismiss } from './lib/useDismiss'
 import {
   debounce,
   getConfig,
@@ -13,38 +14,34 @@ import {
   setConfig,
   setEnabled,
 } from './lib/storage'
-import './App.css'
-
-type Status = { kind: 'ok' | 'error'; text: string; big?: boolean } | null
+import { Menu, MenuDivider, MenuItem } from './components/Menu'
+import { Toast, type ToastStatus } from './components/Toast'
+import { LoadDialog } from './components/dialogs/LoadDialog'
+import { ConfigDialog } from './components/dialogs/ConfigDialog'
+import { PromptDialog } from './components/dialogs/PromptDialog'
+import { SettingsDialog } from './components/dialogs/SettingsDialog'
+import { ImageHostDialog } from './components/dialogs/ImageHostDialog'
+import { ImageUploadDialog } from './components/dialogs/ImageUploadDialog'
 
 /** Delay before a clipboard destination navigates away, so the user can read
  *  the "copied" toast first. */
 const CLIPBOARD_OPEN_DELAY = 2000
 
-/** Where a config field is stored: a shared global key, or the destination's
- *  own namespace. Lets GitHub + Gist share one token. */
-function fieldLoc(dest: Destination, field: ConfigField): [string, string] {
-  return field.shared ? ['shared', field.shared] : [dest.id, field.key]
-}
-function findField(dest: Destination, key: string): ConfigField | undefined {
-  return (
-    (dest.config ?? []).find((f) => f.key === key) ??
-    (dest.prompt ?? []).find((f) => f.key === key)
-  )
-}
-function readField(dest: Destination, field: ConfigField): string {
-  const [d, k] = fieldLoc(dest, field)
-  return getConfig(d, k) ?? ''
-}
-
 function App() {
   const editorRef = useRef<EditorHandle>(null)
-  const initialDraft = useMemo(() => loadDraft(), [])
   const persist = useMemo(() => debounce(saveDraft, 400), [])
+  // The editor seeds its content from this once per mount; bump editorKey to
+  // remount it with fresh content (used by "Load content").
+  const [seed, setSeed] = useState<string>(() => loadDraft())
+  const [editorKey, setEditorKey] = useState(0)
 
-  const [status, setStatus] = useState<Status>(null)
+  const [status, setStatus] = useState<ToastStatus | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [toolsOpen, setToolsOpen] = useState(false)
+  const [imageHostOpen, setImageHostOpen] = useState(false)
+  const [imageChoiceOpen, setImageChoiceOpen] = useState(false)
+  const [loadOpen, setLoadOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [configFor, setConfigFor] = useState<Destination | null>(null)
   const [promptFor, setPromptFor] = useState<Destination | null>(null)
@@ -54,26 +51,24 @@ function App() {
     return m
   })
   const publishRef = useRef<HTMLDivElement>(null)
+  const toolsRef = useRef<HTMLDivElement>(null)
+
+  const closeMenu = useCallback(() => setMenuOpen(false), [])
+  const closeTools = useCallback(() => setToolsOpen(false), [])
+  useDismiss(publishRef, closeMenu, menuOpen)
+  useDismiss(toolsRef, closeTools, toolsOpen)
+
+  // Replace the editor's content (remount with a fresh seed) and persist it.
+  function loadContent(text: string) {
+    setSeed(text)
+    setEditorKey((k) => k + 1)
+    saveDraft(text)
+  }
 
   function toggleEnabled(id: string, on: boolean) {
     setEnabled(id, on)
     setEnabledMap((m) => ({ ...m, [id]: on }))
   }
-
-  // Close the publish menu on outside click / Escape.
-  useEffect(() => {
-    if (!menuOpen) return
-    const onDown = (e: MouseEvent) => {
-      if (!publishRef.current?.contains(e.target as Node)) setMenuOpen(false)
-    }
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setMenuOpen(false)
-    document.addEventListener('mousedown', onDown)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onDown)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [menuOpen])
 
   // Auto-dismiss the status toast.
   useEffect(() => {
@@ -163,12 +158,64 @@ function App() {
   }
 
   return (
-    <div className="app">
-      <div className="topbar">
-        <div className="publish" ref={publishRef}>
+    // --sheet-max / --page-pad are the single source of truth for the sheet
+    // width + horizontal gutter; both the sheet and the fixed top bar derive
+    // their edges from these, so Publish always lines up with the sheet's right
+    // edge at any width.
+    <div className="min-h-dvh [--page-pad:1rem] [--sheet-max:820px] max-[700px]:[--page-pad:0.75rem]">
+      {/* Top bar: fixed to the page, but its inner edges align with the centered
+          sheet (same max-width + horizontal padding as the sheet area). Empty
+          area lets clicks pass through; the two groups re-enable pointer events. */}
+      <div className="pointer-events-none fixed inset-x-0 top-4 z-40 mx-auto flex max-w-[calc(var(--sheet-max)+2*var(--page-pad))] items-start justify-between px-[var(--page-pad)]">
+        <div className="pointer-events-auto relative" ref={toolsRef}>
           <button
             type="button"
-            className="publish-btn"
+            className="inline-flex cursor-pointer items-center justify-center rounded-md border border-transparent px-2 py-[0.3rem] text-muted opacity-60 transition duration-150 hover:bg-hover hover:text-text hover:opacity-100"
+            aria-haspopup="menu"
+            aria-expanded={toolsOpen}
+            aria-label="More"
+            onClick={() => setToolsOpen((o) => !o)}
+          >
+            <span className="inline-flex text-[1.15rem] leading-none [&_svg]:block [&_svg]:size-[1em]">
+              {MoreIcon}
+            </span>
+          </button>
+          {toolsOpen && (
+            <Menu align="left">
+              <MenuItem
+                icon={LoadIcon}
+                onClick={() => {
+                  setToolsOpen(false)
+                  setLoadOpen(true)
+                }}
+              >
+                Load content
+              </MenuItem>
+              <MenuItem
+                icon={ImageIcon}
+                onClick={() => {
+                  setToolsOpen(false)
+                  setImageHostOpen(true)
+                }}
+              >
+                Configure image host
+              </MenuItem>
+              <MenuDivider />
+              <MenuItem
+                icon={FeedbackIcon}
+                href="https://github.com/timqian/inputpub/issues"
+                onClick={() => setToolsOpen(false)}
+              >
+                Feedback
+              </MenuItem>
+            </Menu>
+          )}
+        </div>
+
+        <div className="pointer-events-auto relative" ref={publishRef}>
+          <button
+            type="button"
+            className="group inline-flex cursor-pointer items-center gap-[0.3rem] rounded-md border border-transparent py-[0.3rem] pl-[0.6rem] pr-[0.4rem] font-medium text-muted opacity-70 transition duration-150 enabled:hover:bg-hover enabled:hover:text-text enabled:hover:opacity-100 enabled:active:translate-y-px disabled:cursor-default disabled:opacity-45"
             disabled={busy !== null}
             aria-haspopup="menu"
             aria-expanded={menuOpen}
@@ -176,7 +223,7 @@ function App() {
           >
             <span>{busy ? 'Publishing…' : 'Publish'}</span>
             <svg
-              className="publish-caret"
+              className="shrink-0 opacity-70 transition-transform duration-150 group-aria-expanded:rotate-180"
               width="12"
               height="12"
               viewBox="0 0 24 24"
@@ -191,59 +238,45 @@ function App() {
             </svg>
           </button>
           {menuOpen && (
-            <div className="publish-menu" role="menu">
+            <Menu>
               {destinations
                 .filter((dest) => enabledMap[dest.id])
                 .map((dest) => (
-                <button
-                  key={dest.id}
-                  type="button"
-                  role="menuitem"
-                  className="publish-item"
-                  title={dest.hint}
-                  onClick={() => pick(dest)}
-                >
-                  <span className="publish-item-icon">{dest.icon}</span>
-                  <span className="publish-item-name">{dest.name}</span>
-                </button>
-              ))}
-              <div className="publish-menu-divider" />
-              <button
-                type="button"
-                role="menuitem"
-                className="publish-item"
+                  <MenuItem key={dest.id} icon={dest.icon} title={dest.hint} onClick={() => pick(dest)}>
+                    {dest.name}
+                  </MenuItem>
+                ))}
+              <MenuDivider />
+              <MenuItem
+                icon={GearIcon}
                 onClick={() => {
                   setMenuOpen(false)
                   setSettingsOpen(true)
                 }}
               >
-                <span className="publish-item-icon">{GearIcon}</span>
-                <span className="publish-item-name">Customize</span>
-              </button>
-            </div>
+                Customize
+              </MenuItem>
+            </Menu>
           )}
         </div>
       </div>
 
-      <main className="sheet-area">
-        <div className="sheet">
+      {/* A4-ish sheet: runs flush to the bottom of the window (no bottom gap,
+          squared bottom corners), then grows with content. */}
+      <main className="flex min-h-dvh justify-center bg-backdrop px-[var(--page-pad)] pt-16">
+        <div className="flex h-max min-h-[calc(100dvh-4rem)] w-full max-w-[var(--sheet-max)] rounded-t-lg border border-line bg-paper px-[92px] py-12 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.06)] max-[700px]:px-5 max-[700px]:pb-8 max-[700px]:pt-7">
           <Editor
+            key={editorKey}
             ref={editorRef}
-            defaultValue={initialDraft}
+            defaultValue={seed}
             onChange={persist}
-            onImageUploadAttempt={() => {
-              // Image upload is a Pro feature — send them to the Pro page.
-              window.location.href = '/pro'
-            }}
+            onImageUploadUnconfigured={() => setImageChoiceOpen(true)}
+            onImageUploadError={(text) => setStatus({ kind: 'error', text })}
           />
         </div>
       </main>
 
-      {status && (
-        <div className={`toast ${status.kind}${status.big ? ' big' : ''}`} role="status">
-          {status.text}
-        </div>
-      )}
+      {status && <Toast status={status} />}
 
       {configFor && (
         <ConfigDialog
@@ -274,280 +307,29 @@ function App() {
           onClose={() => setSettingsOpen(false)}
         />
       )}
-    </div>
-  )
-}
 
-function ConfigDialog({
-  dest,
-  onClose,
-  onSaved,
-}: {
-  dest: Destination
-  onClose: () => void
-  onSaved: (dest: Destination) => void
-}) {
-  const [values, setValues] = useState<Record<string, string>>(() =>
-    Object.fromEntries((dest.config ?? []).map((f) => [f.key, readField(dest, f)])),
-  )
+      {loadOpen && (
+        <LoadDialog
+          hasContent={() => !!editorRef.current?.getMarkdown()?.trim()}
+          onLoaded={loadContent}
+          onClose={() => setLoadOpen(false)}
+        />
+      )}
 
-  const canSave = (dest.config ?? []).every((f) => f.optional || values[f.key]?.trim())
+      {imageChoiceOpen && (
+        <ImageUploadDialog
+          onClose={() => setImageChoiceOpen(false)}
+          onConfigure={() => {
+            setImageChoiceOpen(false)
+            setImageHostOpen(true)
+          }}
+          onUpgrade={() => {
+            window.location.href = '/pro'
+          }}
+        />
+      )}
 
-  function save() {
-    for (const f of dest.config ?? []) {
-      const [d, k] = fieldLoc(dest, f)
-      setConfig(d, k, values[f.key].trim())
-    }
-    onSaved(dest)
-  }
-
-  return (
-    <div className="overlay" onClick={onClose}>
-      <div className="dialog" onClick={(e) => e.stopPropagation()}>
-        <h2>
-          {dest.icon} {dest.name} settings
-        </h2>
-        <p className="dialog-note">Saved only in this browser (localStorage); never uploaded.</p>
-        {(dest.config ?? []).map((f) =>
-          f.type === 'textarea' ? (
-            <label key={f.key} className="field">
-              <span>{f.label}</span>
-              <textarea
-                className="field-textarea"
-                placeholder={f.placeholder ?? f.default}
-                value={values[f.key]}
-                rows={6}
-                onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
-              />
-              {f.hint && <span className="field-hint">{f.hint}</span>}
-            </label>
-          ) : (
-            <label key={f.key} className="field">
-              <span>{f.label}</span>
-              <input
-                type={f.type ?? 'text'}
-                placeholder={f.placeholder ?? f.default}
-                value={values[f.key]}
-                autoFocus
-                onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && canSave) save()
-                }}
-              />
-              {f.hint && <span className="field-hint">{f.hint}</span>}
-            </label>
-          ),
-        )}
-        <div className="dialog-actions">
-          <button type="button" className="ghost" onClick={onClose}>
-            Cancel
-          </button>
-          <button type="button" disabled={!canSave} onClick={save}>
-            Save & publish
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function PromptDialog({
-  dest,
-  onCancel,
-  onSubmit,
-}: {
-  dest: Destination
-  onCancel: () => void
-  onSubmit: (dest: Destination, values: Record<string, string>) => void
-}) {
-  const fields = dest.prompt ?? []
-  const [values, setValues] = useState<Record<string, string>>(() =>
-    Object.fromEntries(fields.map((f) => [f.key, ''])),
-  )
-  const canSubmit = fields.every((f) => f.optional || values[f.key]?.trim())
-
-  return (
-    <div className="overlay" onClick={onCancel}>
-      <div className="dialog" onClick={(e) => e.stopPropagation()}>
-        <h2>
-          {dest.icon} Publish to {dest.name}
-        </h2>
-        {fields.map((f, i) => (
-          <label key={f.key} className="field">
-            <span>{f.label}</span>
-            <input
-              type={f.type ?? 'text'}
-              placeholder={f.placeholder}
-              value={values[f.key]}
-              autoFocus={i === 0}
-              onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && canSubmit) onSubmit(dest, values)
-              }}
-            />
-          </label>
-        ))}
-        <div className="dialog-actions">
-          <button type="button" className="ghost" onClick={onCancel}>
-            Cancel
-          </button>
-          <button type="button" disabled={!canSubmit} onClick={() => onSubmit(dest, values)}>
-            Publish
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function SettingsDialog({
-  enabled,
-  onToggle,
-  onClose,
-}: {
-  enabled: Record<string, boolean>
-  onToggle: (id: string, on: boolean) => void
-  onClose: () => void
-}) {
-  // Config fields shown per destination, deduping fields shared across
-  // destinations (the GitHub token shows once, under GitHub — not Gist).
-  const seen = new Set<string>()
-  const fieldsByDest: Record<string, ConfigField[]> = {}
-  for (const d of destinations) {
-    fieldsByDest[d.id] = (d.config ?? []).filter((f) => {
-      if (f.shared) {
-        if (seen.has(f.shared)) return false
-        seen.add(f.shared)
-      }
-      return true
-    })
-  }
-
-  const locKey = (d: Destination, f: ConfigField) => fieldLoc(d, f).join('.')
-  const [values, setValues] = useState<Record<string, string>>(() => {
-    const v: Record<string, string> = {}
-    for (const d of destinations)
-      for (const f of fieldsByDest[d.id]) v[locKey(d, f)] = readField(d, f)
-    return v
-  })
-  const [saved, setSaved] = useState(false)
-  const [open, setOpen] = useState<Record<string, boolean>>({})
-  const toggleOpen = (id: string) => setOpen((o) => ({ ...o, [id]: !o[id] }))
-
-  function save() {
-    for (const d of destinations)
-      for (const f of fieldsByDest[d.id]) {
-        const [sd, sk] = fieldLoc(d, f)
-        setConfig(sd, sk, (values[locKey(d, f)] ?? '').trim())
-      }
-    setSaved(true)
-    setTimeout(() => setSaved(false), 1500)
-  }
-
-  return (
-    <div className="overlay" onClick={onClose}>
-      <div className="dialog" onClick={(e) => e.stopPropagation()}>
-        <h2>Customize</h2>
-        <p className="dialog-note">
-          Toggle each destination on or off; expand the ones with a chevron to configure them. Saved
-          only in this browser (localStorage); never uploaded.
-        </p>
-
-        <div className="settings-scroll">
-        <div className="settings-dests">
-          {destinations.map((d) => {
-            const hasConfig = fieldsByDest[d.id].length > 0
-            return (
-            <div key={d.id} className="settings-dest">
-              <div className="dest-row">
-                {hasConfig ? (
-                  <button
-                    type="button"
-                    className="dest-head"
-                    aria-expanded={!!open[d.id]}
-                    onClick={() => toggleOpen(d.id)}
-                  >
-                    <span className="toggle-icon">{d.icon}</span>
-                    <span className="dest-name">{d.name}</span>
-                    <svg
-                      className="dest-caret"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <path d="M6 9l6 6 6-6" />
-                    </svg>
-                  </button>
-                ) : (
-                  <span className="dest-head dest-head--static">
-                    <span className="toggle-icon">{d.icon}</span>
-                    <span className="dest-name">{d.name}</span>
-                  </span>
-                )}
-                <input
-                  type="checkbox"
-                  checked={!!enabled[d.id]}
-                  onChange={(e) => onToggle(d.id, e.target.checked)}
-                />
-              </div>
-              {hasConfig && open[d.id] && (
-                <div className="settings-dest-config">
-                  {fieldsByDest[d.id].map((f) => (
-                    <label key={f.key} className="field">
-                      <span>{f.label}</span>
-                      {f.type === 'textarea' ? (
-                        <textarea
-                          className="field-textarea"
-                          placeholder={f.placeholder ?? f.default}
-                          value={values[locKey(d, f)]}
-                          rows={6}
-                          onChange={(e) =>
-                            setValues((v) => ({ ...v, [locKey(d, f)]: e.target.value }))
-                          }
-                        />
-                      ) : (
-                        <input
-                          type={f.type ?? 'text'}
-                          placeholder={f.placeholder ?? f.default}
-                          value={values[locKey(d, f)]}
-                          onChange={(e) =>
-                            setValues((v) => ({ ...v, [locKey(d, f)]: e.target.value }))
-                          }
-                        />
-                      )}
-                      {f.hint && <span className="field-hint">{f.hint}</span>}
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-            )
-          })}
-        </div>
-
-        <a
-          className="settings-suggest"
-          href="https://github.com/timqian/inputpub/issues/new?title=Suggest%20a%20new%20destination&labels=destination"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Suggest a new destination ↗
-        </a>
-        </div>
-
-        <div className="dialog-actions">
-          <button type="button" className="ghost" onClick={onClose}>
-            Close
-          </button>
-          <button type="button" onClick={save}>
-            {saved ? 'Saved' : 'Save'}
-          </button>
-        </div>
-      </div>
+      {imageHostOpen && <ImageHostDialog onClose={() => setImageHostOpen(false)} />}
     </div>
   )
 }
