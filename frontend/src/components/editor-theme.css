@@ -6,6 +6,56 @@
    black & white palette (the --bg/--text/... vars from index.css).
 --------------------------------------------------------------------------- */
 
+/* Crepe's frame theme hard-codes a light palette in :root and never reacts to
+   the OS color scheme, so in dark mode the editor text stays black on our black
+   background. Map Crepe's color tokens onto the app's --text/--bg/... palette so
+   the editor follows the same light/dark switch as everything else. This file
+   loads after frame.css, so these :root rules win. */
+/* Same dark mapping for both cases (system dark, and an explicit dark choice),
+   mirroring the data-theme logic in index.css. The selectors out-specify
+   Crepe's own `.milkdown` token block, so these win. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .milkdown {
+    --crepe-color-background: var(--paper);
+    --crepe-color-on-background: var(--text);
+    --crepe-color-surface: var(--surface);
+    --crepe-color-surface-low: var(--hover);
+    --crepe-color-on-surface: var(--text);
+    --crepe-color-on-surface-variant: var(--muted);
+    --crepe-color-outline: var(--line);
+    --crepe-color-primary: var(--text);
+    --crepe-color-secondary: #4d4d4d;
+    --crepe-color-on-secondary: var(--text);
+    --crepe-color-inverse: #e5e5e5;
+    --crepe-color-on-inverse: #2a2a2a;
+    --crepe-color-inline-code: #ff6666;
+    --crepe-color-error: #ff6666;
+    --crepe-color-hover: var(--hover);
+    --crepe-color-selected: var(--selection);
+    --crepe-color-inline-area: #2b2b2b;
+  }
+}
+
+:root[data-theme='dark'] .milkdown {
+  --crepe-color-background: var(--paper);
+  --crepe-color-on-background: var(--text);
+  --crepe-color-surface: var(--surface);
+  --crepe-color-surface-low: var(--hover);
+  --crepe-color-on-surface: var(--text);
+  --crepe-color-on-surface-variant: var(--muted);
+  --crepe-color-outline: var(--line);
+  --crepe-color-primary: var(--text);
+  --crepe-color-secondary: #4d4d4d;
+  --crepe-color-on-secondary: var(--text);
+  --crepe-color-inverse: #e5e5e5;
+  --crepe-color-on-inverse: #2a2a2a;
+  --crepe-color-inline-code: #ff6666;
+  --crepe-color-error: #ff6666;
+  --crepe-color-hover: var(--hover);
+  --crepe-color-selected: var(--selection);
+  --crepe-color-inline-area: #2b2b2b;
+}
+
 /* Headings share the body typeface (only size/weight differ). */
 .milkdown .ProseMirror :is(h1, h2, h3, h4, h5, h6) {
   font-family: var(--sans);

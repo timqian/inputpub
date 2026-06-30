@@ -50,8 +50,13 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Dark palette. Applied in two cases, kept in sync:
+   1. System dark with no explicit choice  → :root:not([data-theme]) in the media query
+   2. User explicitly chose dark            → :root[data-theme='dark']
+   An explicit 'light' choice keeps the :root defaults above; it only needs to
+   pin color-scheme so native UI (scrollbars, form controls) stays light. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme]) {
     --bg: #000000;
     --surface: #0a0a0a;
     --backdrop: #000000;
@@ -64,7 +69,28 @@
     --accent: #ffffff;
     --btn-bg: #e5e5e5;
     --btn-fg: #111111;
+    color-scheme: dark;
   }
+}
+
+:root[data-theme='dark'] {
+  --bg: #000000;
+  --surface: #0a0a0a;
+  --backdrop: #000000;
+  --paper: #0a0a0a;
+  --hover: #1a1a1a;
+  --selection: #2a2a2a;
+  --text: #ededed;
+  --muted: #888888;
+  --line: #2a2a2a;
+  --accent: #ffffff;
+  --btn-bg: #e5e5e5;
+  --btn-fg: #111111;
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
 }
 
 * {

@@ -167,6 +167,52 @@ export const FeedbackIcon: ReactNode = (
   </svg>
 )
 
+// ---- Theme-toggle icons (system / light / dark) ----
+const lineIcon = (children: ReactNode): ReactNode => (
+  <svg
+    viewBox="0 0 24 24"
+    width="1em"
+    height="1em"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    {children}
+  </svg>
+)
+
+/* System — a monitor (follows the OS color scheme). */
+export const MonitorIcon: ReactNode = lineIcon(
+  <>
+    <rect x="3" y="4" width="18" height="12" rx="2" />
+    <line x1="8" y1="20" x2="16" y2="20" />
+    <line x1="12" y1="16" x2="12" y2="20" />
+  </>,
+)
+
+/* Light — a sun. */
+export const SunIcon: ReactNode = lineIcon(
+  <>
+    <circle cx="12" cy="12" r="4" />
+    <line x1="12" y1="2" x2="12" y2="4" />
+    <line x1="12" y1="20" x2="12" y2="22" />
+    <line x1="4.2" y1="4.2" x2="5.6" y2="5.6" />
+    <line x1="18.4" y1="18.4" x2="19.8" y2="19.8" />
+    <line x1="2" y1="12" x2="4" y2="12" />
+    <line x1="20" y1="12" x2="22" y2="12" />
+    <line x1="4.2" y1="19.8" x2="5.6" y2="18.4" />
+    <line x1="18.4" y1="5.6" x2="19.8" y2="4.2" />
+  </>,
+)
+
+/* Dark — a crescent moon. */
+export const MoonIcon: ReactNode = lineIcon(
+  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />,
+)
+
 // ---- Image-host icons ----
 export const SparklesIcon = solid('M12 2l2.2 7.8L22 12l-7.8 2.2L12 22l-2.2-7.8L2 12l7.8-2.2z')
 

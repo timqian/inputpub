@@ -1,7 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Editor, type EditorHandle } from './components/Editor'
 import { destinations, type Destination } from './destinations'
-import { GearIcon, MoreIcon, LoadIcon, ImageIcon, FeedbackIcon } from './destinations/icons'
+import {
+  GearIcon,
+  MoreIcon,
+  LoadIcon,
+  ImageIcon,
+  FeedbackIcon,
+  MonitorIcon,
+  SunIcon,
+  MoonIcon,
+} from './destinations/icons'
+import { applyThemePref, getThemePref, nextThemePref, type ThemePref } from './lib/theme'
 import { renderTemplate, templateVars } from './lib/template'
 import { fieldLoc, findField, readField } from './lib/fields'
 import { useDismiss } from './lib/useDismiss'
@@ -43,6 +53,7 @@ function App() {
   const [busy, setBusy] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [toolsOpen, setToolsOpen] = useState(false)
+  const [theme, setTheme] = useState<ThemePref>(getThemePref)
   const [imageHostOpen, setImageHostOpen] = useState(false)
   const [imageChoiceOpen, setImageChoiceOpen] = useState(false)
   const [loadOpen, setLoadOpen] = useState(false)
@@ -233,6 +244,19 @@ function App() {
                 }}
               >
                 Configure image host
+              </MenuItem>
+              <MenuItem
+                icon={
+                  theme === 'system' ? MonitorIcon : theme === 'light' ? SunIcon : MoonIcon
+                }
+                title="Switch color theme"
+                onClick={() => {
+                  const next = nextThemePref(theme)
+                  setTheme(next)
+                  applyThemePref(next)
+                }}
+              >
+                Theme: {theme === 'system' ? 'System' : theme === 'light' ? 'Light' : 'Dark'}
               </MenuItem>
               <MenuDivider />
               <MenuItem
